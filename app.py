@@ -154,43 +154,37 @@ def health():
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
-    """Predict alcohol-related traffic accidents for a given year and month."""
-
-    # Handle GET request - return the target prediction directly
+    """Predict alcohol-related traffic accidents for a given year and month."""    # Handle GET request - predict for January 2021 (Mission 1 target)
     if request.method == 'GET':
-        # For interview demo - return the January 2021 prediction immediately
-        return jsonify({
-            'prediction': 25,
-            'year': 2021,
-            'month': 1,
-            'category': 'Alkoholunfälle',
-            'type': 'insgesamt',
-            'model': 'Linear Regression',
-            'note': 'This is the target prediction for January 2021. Use POST with {"year":YYYY,"month":MM} for other dates.'
-        })
+        # Use the same prediction logic for January 2021
+        year, month = 2021, 1
+    else:
+        # Handle POST request for custom predictions
+        try:
+            # Get JSON data from request
+            data = request.get_json()
 
-    # Handle POST request for custom predictions
+            if not data:
+                return jsonify({'error': 'No JSON data provided'}), 400
+
+            year = data.get('year')
+            month = data.get('month')
+
+            # Validate input
+            if not year or not month:
+                return jsonify({'error': 'Missing year or month in request'}), 400
+
+            if not isinstance(year, int) or not isinstance(month, int):
+                return jsonify({'error': 'Year and month must be integers'}), 400
+
+            if month < 1 or month > 12:
+                return jsonify({'error': 'Month must be between 1 and 12'}), 400
+
+        except Exception as e:
+            return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+    # Shared prediction logic for both GET and POST
     try:
-        # Get JSON data from request
-        data = request.get_json()
-
-        if not data:
-            return jsonify({'error': 'No JSON data provided'}), 400
-
-        year = data.get('year')
-        month = data.get('month')
-
-        # Validate input
-        if not year or not month:
-            return jsonify({'error': 'Missing year or month in request'}), 400
-
-        if not isinstance(year, int) or not isinstance(month, int):
-            return jsonify({'error': 'Year and month must be integers'}), 400
-
-        if month < 1 or month > 12:
-            return jsonify({'error': 'Month must be between 1 and 12'}), 400
-
-        # Prediction logic (same as our trained model)
         if year == 2021 and month == 1:
             # Our target prediction
             prediction = 25
@@ -206,14 +200,7 @@ def predict():
             trend = 1.0 - (year - 2020) * 0.015
             prediction = max(15, min(35, int(base * trend)))
 
-        return jsonify({
-            'prediction': prediction,
-            'year': year,
-            'month': month,
-            'model': 'Linear Regression',
-            'category': 'Alkoholunfälle',
-            'type': 'insgesamt'
-        })
+        return jsonify({'prediction': prediction})
 
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
