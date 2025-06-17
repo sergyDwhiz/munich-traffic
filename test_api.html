@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munich Traffic API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #005a8a;
+        }
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border-left: 4px solid #007cba;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Munich Traffic Accident Prediction API Tester</h1>
+        <p>Test the deployed API at: <strong>https://munich-prediction.up.railway.app/</strong></p>
+
+        <div class="test-section">
+            <h2>🔍 Health Check</h2>
+            <p>Test the API health status:</p>
+            <button onclick="testHealth()">Test /health</button>
+            <div id="health-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Prediction Test</h2>
+            <p>Test the prediction endpoint:</p>
+            <div>
+                <label>Year: <input type="number" id="year" value="2021" min="2020" max="2025"></label>
+                <label>Month: <input type="number" id="month" value="1" min="1" max="12"></label>
+            </div>
+            <button onclick="testPrediction()">Test /predict</button>
+            <button onclick="testPrediction(2022, 6)">Test June 2022</button>
+            <button onclick="testPrediction(2023, 12)">Test Dec 2023</button>
+            <div id="prediction-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📖 How to Use</h2>
+            <p><strong>Health Check (GET):</strong></p>
+            <code>curl https://munich-prediction.up.railway.app/health</code>
+
+            <p><strong>Prediction (POST):</strong></p>
+            <code>curl -X POST https://munich-prediction.up.railway.app/predict \<br>
+  -H "Content-Type: application/json" \<br>
+  -d '{"year": 2021, "month": 1}'</code>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://munich-prediction.up.railway.app';
+
+        function showResult(elementId, message, isSuccess = true) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+            resultDiv.textContent = message;
+        }
+
+        async function testHealth() {
+            try {
+                showResult('health-result', 'Testing...', true);
+
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('health-result',
+                        `✅ SUCCESS (${response.status})\n\n` +
+                        JSON.stringify(data, null, 2), true);
+                } else {
+                    showResult('health-result',
+                        `❌ ERROR (${response.status})\n\n` +
+                        JSON.stringify(data, null, 2), false);
+                }
+            } catch (error) {
+                showResult('health-result',
+                    `❌ NETWORK ERROR\n\n${error.message}`, false);
+            }
+        }
+
+        async function testPrediction(customYear = null, customMonth = null) {
+            try {
+                showResult('prediction-result', 'Testing...', true);
+
+                const year = customYear || parseInt(document.getElementById('year').value);
+                const month = customMonth || parseInt(document.getElementById('month').value);
+
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ year, month })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('prediction-result',
+                        `✅ SUCCESS (${response.status})\n\n` +
+                        `Request: {"year": ${year}, "month": ${month}}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`, true);
+                } else {
+                    showResult('prediction-result',
+                        `❌ ERROR (${response.status})\n\n` +
+                        JSON.stringify(data, null, 2), false);
+                }
+            } catch (error) {
+                showResult('prediction-result',
+                    `❌ NETWORK ERROR\n\n${error.message}`, false);
+            }
+        }
+
+        // Test health check automatically when page loads
+        window.onload = function() {
+            setTimeout(testHealth, 500);
+        };
+    </script>
+</body>
+</html>
