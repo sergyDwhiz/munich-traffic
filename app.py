@@ -152,9 +152,25 @@ def health():
         'version': '1.0.0'
     })
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['GET', 'POST'])
 def predict():
     """Predict alcohol-related traffic accidents for a given year and month."""
+
+    # Handle GET request with instructions
+    if request.method == 'GET':
+        return jsonify({
+            'error': 'This endpoint requires a POST request',
+            'method': 'POST',
+            'endpoint': '/predict',
+            'required_data': {
+                'year': 'integer (e.g., 2021)',
+                'month': 'integer (1-12)'
+            },
+            'example_curl': 'curl -X POST /predict -H "Content-Type: application/json" -d \'{"year": 2021, "month": 1}\'',
+            'example_response': {'prediction': 25, 'year': 2021, 'month': 1}
+        }), 400
+
+    # Handle POST request
     try:
         # Get JSON data from request
         data = request.get_json()
